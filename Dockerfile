@@ -1,31 +1,31 @@
 ###############################################################################
-# 1.  BUILD STAGE – uses the official Flutter image (Linux)                  #
+# 1 ─ BUILD STAGE                                                             #
 ###############################################################################
-FROM cirrusci/flutter:3.22 as build
+# Use the official Flutter image with the latest stable SDK (3.22 at July 2025)
+FROM cirrusci/flutter:3.22 AS build
+
+# Set working directory inside the container
 WORKDIR /app
 
-# copy source and download dependencies once
+# --- Caching trick: copy pubspec first, fetch deps, then rest of the code ----
 COPY pubspec.* ./
 RUN flutter pub get
 
-# copy the rest of the project
+# Copy the rest of the sources and build the web release bundle
 COPY . .
-
-# build the web release bundle
-RUN flutter build web --release
+RUN flutter build web --release              # output → build/web
 
 ###############################################################################
-# 2.  RUNTIME STAGE – serve with Nginx (tiny image)                           #
+# 2 ─ RUNTIME STAGE (static site)                                             #
 ###############################################################################
 FROM nginx:stable-alpine
-# Remove default html
-RUN rm -rf /usr/share/nginx/html/*
 
-# Copy Flutter build output to Nginx web root
+# Remove default Nginx html & copy Flutter build
+RUN rm -rf /usr/share/nginx/html/*
 COPY --from=build /app/build/web /usr/share/nginx/html
 
 # Expose web port
 EXPOSE 80
 
-# Start Nginx (Render detects the CMD automatically)
+# Start Nginx in the foreground (Render auto-detects this)
 CMD ["nginx", "-g", "daemon off;"]
