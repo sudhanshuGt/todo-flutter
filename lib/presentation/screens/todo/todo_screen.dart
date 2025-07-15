@@ -17,7 +17,7 @@ class TodoPage extends GetView<TodoController> {
     final newTodoCtrl = TextEditingController();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Todos')),
+      appBar: AppBar(title: const Text('My Todo')),
       body: Obx(() {
         if (controller.loading.value) {
           return const Center(child: CircularProgressIndicator());
