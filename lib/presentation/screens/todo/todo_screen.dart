@@ -4,25 +4,32 @@ import 'package:get/get.dart';
 import '../../../domain/entities/todo.dart';
 import '../../controller/todo_controller.dart';
 
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-
-import '../../controller/todo_controller.dart';
-
+/// Todo screen displaying the list of user's todos.
+///
+/// Uses [TodoController] for state management and handles:
+/// - Viewing todos
+/// - Adding new todos
+/// - Editing existing todos (including completion status)
+/// - Deleting todos
 class TodoPage extends GetView<TodoController> {
   const TodoPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Controller for capturing new todo input text
     final newTodoCtrl = TextEditingController();
 
     return Scaffold(
       appBar: AppBar(title: const Text('My Todo')),
+
+      // Reactive body that rebuilds on state changes
       body: Obx(() {
+        // Show loading indicator while fetching data
         if (controller.loading.value) {
           return const Center(child: CircularProgressIndicator());
         }
 
+        // Show error message if any
         if (controller.error.value != null) {
           return Center(
             child: Text(
@@ -32,6 +39,7 @@ class TodoPage extends GetView<TodoController> {
           );
         }
 
+        // Show the list of todos
         return ListView.builder(
           padding: const EdgeInsets.only(bottom: 80),
           itemCount: controller.todos.length,
@@ -42,18 +50,19 @@ class TodoPage extends GetView<TodoController> {
               title: Text(
                 t.todo,
                 style: TextStyle(
-                  decoration: t.completed
-                      ? TextDecoration.lineThrough
-                      : null,
+                  // Strike-through completed todos
+                  decoration: t.completed ? TextDecoration.lineThrough : null,
                 ),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Edit todo button
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () => _showEditDialog(context, t),
                   ),
+                  // Delete todo button
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () => controller.remove(t),
@@ -64,23 +73,24 @@ class TodoPage extends GetView<TodoController> {
           },
         );
       }),
+
+      // Floating action button to add new todos
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () => Get.defaultDialog(
           title: 'Add Todo',
           content: TextField(
             controller: newTodoCtrl,
-            decoration:
-            const InputDecoration(hintText: 'What to do?'),
+            decoration: const InputDecoration(hintText: 'What to do?'),
           ),
           textConfirm: 'Add',
           onConfirm: () {
             final text = newTodoCtrl.text.trim();
             if (text.isNotEmpty) {
-              controller.add(text);
-              newTodoCtrl.clear();
+              controller.add(text); // Add new todo via controller
+              newTodoCtrl.clear();  // Clear input field after adding
             }
-            Get.back();
+            Get.back(); // Close dialog
           },
           textCancel: 'Cancel',
         ),
@@ -88,6 +98,7 @@ class TodoPage extends GetView<TodoController> {
     );
   }
 
+  /// Shows an editable dialog for updating [todo]'s text and completion status.
   void _showEditDialog(BuildContext context, Todo todo) {
     final editCtrl = TextEditingController(text: todo.todo);
     bool isCompleted = todo.completed;
@@ -99,11 +110,12 @@ class TodoPage extends GetView<TodoController> {
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Editable text field for todo text
               TextField(
                 controller: editCtrl,
-                decoration:
-                const InputDecoration(hintText: 'Edit todo'),
+                decoration: const InputDecoration(hintText: 'Edit todo'),
               ),
+              // Checkbox to toggle completion status
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -125,8 +137,15 @@ class TodoPage extends GetView<TodoController> {
       textConfirm: 'Save',
       onConfirm: () {
         final newText = editCtrl.text.trim();
-        controller.toggleComplete(Todo(id: todo.id, todo: newText.isNotEmpty ? newText : todo.todo, completed: isCompleted));
-        Get.back();
+        // Update todo with new text and completion status
+        controller.toggleComplete(
+          Todo(
+            id: todo.id,
+            todo: newText.isNotEmpty ? newText : todo.todo,
+            completed: isCompleted,
+          ),
+        );
+        Get.back(); // Close dialog after saving
       },
       textCancel: 'Cancel',
     );
